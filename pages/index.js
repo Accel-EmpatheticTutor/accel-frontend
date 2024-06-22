@@ -22,7 +22,7 @@ export default function Home() {
                 </span>
               </h1>
               <p className="text-2xl text-center mt-4">
-                Your empathetic physics tutor
+                Your empathetic chemistry tutor
               </p>
               <button
                 className="bg-transparent border-white border-2 text-white text-lg px-4 py-2 mt-8 rounded-xl hover:bg-white hover:text-black duration-500"
