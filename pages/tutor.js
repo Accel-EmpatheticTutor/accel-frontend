@@ -64,11 +64,18 @@ export default function Tutor() {
 
   const sendMessage = async (message) => {
     console.log(message);
-    await new Promise((r) => setTimeout(r, 1000));
-    const data = {
-      message: "Hello!",
-      quiz: true,
-    };
+    const response = await fetch("/api/hello", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            message: message,
+            history: messages,
+            quiz: quizMode,
+        }),
+    });
+    const data = await response.json();
     return data;
   };
 
@@ -132,10 +139,31 @@ export default function Tutor() {
 
   const enterQuizMode = async () => {
     setQuizMode(true);
+    setLoading(true);
     setMessages([
       ...messages,
       { message: "Entering quiz mode...", type: "model" },
     ]);
+    const response = await fetch("/api/hello", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            message: "",
+            history: messages,
+            quiz: true,
+        }),
+    });
+    const data = await response.json();
+    if (data.message) {
+      setMessages([
+        ...messages,
+        { message: "Entering quiz mode...", type: "model" },
+        { message: data.message, type: "model" },
+      ]);
+    }
+    setLoading(false);
   };
 
   const exitQuizMode = async () => {
@@ -210,7 +238,7 @@ export default function Tutor() {
                         }
                         key={i}
                       >
-                        <div className="max-w-96 bg-transparent border-white border text-white rounded-lg py-2 px-4 gap-3">
+                        <div className="max-w-half bg-transparent border-white border text-white rounded-lg py-2 px-4 gap-3">
                           <div className="w-full text-wrap break-words">
                             {m.message}
                           </div>
@@ -221,7 +249,7 @@ export default function Tutor() {
                 })}
                 {loading && (
                   <div className="flex mb-4 cursor-pointer mx-4">
-                    <div className="flex max-w-96 bg-white rounded-lg px-4 py-4 gap-3">
+                    <div className="flex max-w-full bg-white rounded-lg px-4 py-4 gap-3">
                       <TypingAnimation />
                     </div>
                   </div>
