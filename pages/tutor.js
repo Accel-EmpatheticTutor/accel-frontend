@@ -101,7 +101,7 @@ export default function Tutor() {
     setMessage("");
   };
 
-  const sendMessage = async (bigMessage) => {
+  const sendMessage = async (bigMessage, mode=quizMode) => {
     const response = await fetch("/api/hello", {
       method: "POST",
       headers: {
@@ -110,7 +110,7 @@ export default function Tutor() {
       body: JSON.stringify({
         message: bigMessage.message,
         history: messages,
-        quiz: quizMode,
+        quiz: mode,
       }),
     });
     const data = await response.json();
@@ -165,14 +165,14 @@ export default function Tutor() {
     }
   };
 
-  const enterQuizMode = async (query) => {
+  const enterQuizMode = async () => {
     setQuizMode(true);
     setLoading(true);
     setMessages([
       ...messages,
       { message: "Entering quiz mode...", type: "model" },
     ]);
-    sendMessage({ message: "", emotion: [], highlight: 0, type: "user" }).then(
+    sendMessage({ message: "", emotion: [], highlight: 0, type: "user" }, true).then(
       (data) => {
         setMessages([
           ...messages,
@@ -194,7 +194,6 @@ export default function Tutor() {
 
   return (
     <>
-      {isExploding && <ConfettiExplosion />}
       <main
         className={`flex h-screen flex-col items-center justify-between ${inter.className}`}
       >
@@ -212,7 +211,7 @@ export default function Tutor() {
                 <div className="mb-2 text-sm font-medium text-gray-300">
                   Quiz Mode
                 </div>
-                <label className="inline-flex items-center cursor-pointer">
+                <label className="inline-flex items-center cursor-pointer z-50 pb-4">
                   <input
                     type="checkbox"
                     value=""
@@ -344,6 +343,7 @@ export default function Tutor() {
                 </div>
               )}
               <div className="absolute p-8 bottom-0 right-0 w-1/4">
+              {isExploding && <ConfettiExplosion />}
                 <Image
                   src="/tutor-mascot.png"
                   alt="Tutor Mascot"
