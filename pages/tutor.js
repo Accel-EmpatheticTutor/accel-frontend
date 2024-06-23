@@ -189,7 +189,7 @@ export default function Tutor() {
             >
               Accel
             </h1>
-            <div className="mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+            <div className="mb-2 text-sm font-medium text-gray-300">
               Quiz Mode
             </div>
             <label className="inline-flex items-center cursor-pointer">
@@ -207,7 +207,7 @@ export default function Tutor() {
                 // if quizMode is true, set the checkbox to checked
                 checked={quizMode}
               />
-              <div className="relative w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-gradient-to-br from-sky-200 to-blue-600"></div>
+              <div className="relative w-11 h-6 rounded-full peer bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-gray-600 peer-checked:bg-gradient-to-br from-sky-200 to-blue-600"></div>
             </label>
             </div>
             <div className="absolute bottom-0 left-0 w-3/4 p-8 h-5/6 pb-28">
