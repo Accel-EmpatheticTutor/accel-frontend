@@ -28,7 +28,7 @@ export default function Tutor() {
   } = useVoice();
 
   useEffect(() => {
-    console.log(recording)
+    console.log(recording);
     if (audioMessages.length > 0) {
       setMessage(
         audioMessages
@@ -39,41 +39,69 @@ export default function Tutor() {
     }
   }, [audioMessages, recording]);
 
-  const handleSubmit = () => {
+  const handleSubmit = (bigMessage) => {
     setLoading(true);
-    if (!message) {
+    if (!bigMessage.message) {
       return;
     }
-    setMessages([...messages, { message, type: "user", emotion: [] }]);
-    sendMessage({ message, emotion: [] }).then((data) => {
-      if (data.quiz) {
-        if (quizMode) exitQuizMode();
-        else enterQuizMode(false);
-      }
-      if (data.message) {
+    setMessages([...messages, bigMessage]);
+
+    // if quiz mode, get answer and then request new question
+    if (quizMode) {
+      sendMessage(bigMessage).then((data) => {
         setMessages([
           ...messages,
-          { message, type: "user", emotion: [] },
-          { message: data.message, type: "model" },
+          {
+            message: bigMessage.message,
+            type: "user",
+            emotion: bigMessage.emotion,
+            highlight: data.highlight,
+          },
+          { message: data.message, type: "model", quiz: false },
         ]);
-      }
-      setLoading(false);
-    });
+        sendMessage({
+          message: "",
+          emotion: bigMessage.emotion,
+          highlight: 0,
+          type: "user",
+        }).then((data2) => {
+          setMessages([
+            ...messages,
+            {
+              message: bigMessage.message,
+              type: "user",
+              emotion: bigMessage.emotion,
+              highlight: data.highlight,
+            },
+            { message: data.message, type: "model", quiz: false },
+            { message: data2.message, type: "model", quiz: true },
+          ]);
+        });
+      });
+    } else {
+      sendMessage(bigMessage).then((data) => {
+        setMessages([
+          ...messages,
+          bigMessage,
+          { message: data.message, type: "model", quiz: false },
+        ]);
+      });
+    }
+    setLoading(false);
     setMessage("");
   };
 
-  const sendMessage = async (message) => {
-    console.log(message);
+  const sendMessage = async (bigMessage) => {
     const response = await fetch("/api/hello", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            message: message,
-            history: messages,
-            quiz: quizMode,
-        }),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: bigMessage.message,
+        history: messages,
+        quiz: quizMode,
+      }),
     });
     const data = await response.json();
     return data;
@@ -85,7 +113,7 @@ export default function Tutor() {
       readyState === VoiceReadyState.OPEN
     ) {
       disconnect();
-        setRecording(false);
+      setRecording(false);
       // add up top 3 emotions from each message
       if (!message) return;
       let emotions = {};
@@ -114,25 +142,15 @@ export default function Tutor() {
       setRecentEmotions(top3);
 
       // send message
-      setMessages([...messages, { message, type: "user", emotion: top3 }]);
-      sendMessage({ message, emotion: top3 }).then((data) => {
-        if (data.quiz) {
-          if (quizMode) exitQuizMode();
-          else enterQuizMode(false);
-        }
-        if (data.message) {
-          setMessages([
-            ...messages,
-            { message, type: "user", emotion: top3 },
-            { message: data.message, type: "model" },
-          ]);
-        }
-        setLoading(false);
+      handleSubmit({
+        message: message,
+        type: "user",
+        emotion: top3,
+        highlight: 0,
       });
-      setMessage("");
     } else {
       connect().then(() => {
-        setRecording(true)
+        setRecording(true);
       });
     }
   };
@@ -144,27 +162,15 @@ export default function Tutor() {
       ...messages,
       { message: "Entering quiz mode...", type: "model" },
     ]);
-    if (query) {
-        const response = await fetch("/api/hello", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                message: "",
-                history: messages,
-                quiz: true,
-            }),
-        });
-        const data = await response.json();
-        if (data.message) {
+    sendMessage({ message: "", emotion: [], highlight: 0, type: "user" }).then(
+      (data) => {
         setMessages([
-            ...messages,
-            { message: "Entering quiz mode...", type: "model" },
-            { message: data.message, type: "model" },
+          ...messages,
+          { message: "Entering quiz mode...", type: "model" },
+          { message: data.message, type: "model", quiz: true },
         ]);
-        }
-    }
+      }
+    );
     setLoading(false);
   };
 
@@ -185,32 +191,32 @@ export default function Tutor() {
         <div className="w-full h-full grid grid-cols-4">
           <div className="col-span-3 flex flex-col items-center justify-center">
             <div className="absolute top-0 left-0 w-3/4 p-8 flex flex-col items-center">
-            <h1
-              className="mb-4 text-transparent text-4xl bg-clip-text bg-gradient-to-br from-sky-200 to-blue-600"
-              onClick={() => Router.push("/")}
-            >
-              Accel
-            </h1>
-            <div className="mb-2 text-sm font-medium text-gray-300">
-              Quiz Mode
-            </div>
-            <label className="inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                value=""
-                className="sr-only peer"
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    enterQuizMode(true);
-                  } else {
-                    exitQuizMode();
-                  }
-                }}
-                // if quizMode is true, set the checkbox to checked
-                checked={quizMode}
-              />
-              <div className="relative w-11 h-6 rounded-full peer bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-gray-600 peer-checked:bg-gradient-to-br from-sky-200 to-blue-600"></div>
-            </label>
+              <h1
+                className="mb-4 text-transparent text-4xl bg-clip-text bg-gradient-to-br from-sky-200 to-blue-600"
+                onClick={() => Router.push("/")}
+              >
+                Accel
+              </h1>
+              <div className="mb-2 text-sm font-medium text-gray-300">
+                Quiz Mode
+              </div>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  value=""
+                  className="sr-only peer"
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      enterQuizMode(true);
+                    } else {
+                      exitQuizMode();
+                    }
+                  }}
+                  // if quizMode is true, set the checkbox to checked
+                  checked={quizMode}
+                />
+                <div className="relative w-11 h-6 rounded-full peer bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-gray-600 peer-checked:bg-gradient-to-br from-sky-200 to-blue-600"></div>
+              </label>
             </div>
             <div className="absolute bottom-0 left-0 w-3/4 p-8 h-5/6 pb-28">
               <ScrollContainer>
@@ -224,8 +230,15 @@ export default function Tutor() {
                         }
                         key={i}
                       >
-                        <div className="flex max-w-full bg-white rounded-lg py-2 px-4 gap-3">
-                          <div className="text-gray-700">
+                        <div
+                          className={
+                            "flex max-w-full rounded-lg py-2 px-4 gap-3" +
+                            (m.quiz
+                              ? " bg-gradient-to-br from-sky-200 to-blue-600 text-white"
+                              : " bg-white text-gray-700")
+                          }
+                        >
+                          <div className="">
                             <Markdown className="divrose">{m.message}</Markdown>
                           </div>
                         </div>
@@ -240,7 +253,16 @@ export default function Tutor() {
                         }
                         key={i}
                       >
-                        <div className="max-w-half bg-transparent border-white border text-white rounded-lg py-2 px-4 gap-3">
+                        <div
+                          className={
+                            "max-w-half bg-transparent border rounded-lg py-2 px-4 gap-3" +
+                            (m.highlight == 1
+                              ? " border-green-500 text-green-500"
+                              : (m.highlight == 2
+                              ? " border-red-500 text-red-500"
+                              : " border-white text-white"))
+                          }
+                        >
                           <div className="w-full text-wrap break-words">
                             {m.message}
                           </div>
@@ -268,16 +290,21 @@ export default function Tutor() {
                   value={message}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      handleSubmit();
+                      handleSubmit({
+                        message: message,
+                        type: "user",
+                        emotion: [],
+                        highlight: 0,
+                      });
                     }
                   }}
                 />
                 <button
                   className={
-                    "bg-transparent border-white border text-white text-md px-4 py-2 ml-2 rounded-lg hover:bg-white hover:text-black duration-500" +
+                    "bg-transparent border text-md px-4 py-2 ml-2 rounded-lg duration-500" +
                     (recording
                       ? " bg-red-600 border-red-600 hover:bg-red-700 hover:border-red-700 hover:text-white"
-                      : "")
+                      : " border-white text-white hover:bg-white hover:text-black")
                   }
                   onClick={handleMic}
                 >
@@ -302,9 +329,14 @@ export default function Tutor() {
                 </div>
               </div>
             )}
-
             <div className="absolute p-8 bottom-0 right-0 w-1/4">
-            <Image src="/tutor-mascot.png" alt="Tutor Mascot" width={360} height={360} className=""/>
+              <Image
+                src="/tutor-mascot.png"
+                alt="Tutor Mascot"
+                width={360}
+                height={360}
+                className=""
+              />
             </div>
           </div>
         </div>

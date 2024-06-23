@@ -17,7 +17,7 @@ export default function Expressions({
         <div className={"w-full overflow-hidden mt-4"} key={exp[0]}>
           <div className={"flex items-center justify-between gap-1 font-mono pb-1"}>
             <div className={"font-medium truncate"}>{exp[0]}</div>
-            <div className={"tabular-nums opacity-50"}>{exp[1].toFixed(2) * 100}%</div>
+            <div className={"tabular-nums opacity-50"}>{(exp[1] * 100).toFixed(0)}%</div>
           </div>
           <div
             className={"relative h-2"}
