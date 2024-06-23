@@ -48,7 +48,7 @@ export default function Tutor() {
     sendMessage({ message, emotion: [] }).then((data) => {
       if (data.quiz) {
         if (quizMode) exitQuizMode();
-        else enterQuizMode();
+        else enterQuizMode(false);
       }
       if (data.message) {
         setMessages([
@@ -118,7 +118,7 @@ export default function Tutor() {
       sendMessage({ message, emotion: top3 }).then((data) => {
         if (data.quiz) {
           if (quizMode) exitQuizMode();
-          else enterQuizMode();
+          else enterQuizMode(false);
         }
         if (data.message) {
           setMessages([
@@ -137,31 +137,33 @@ export default function Tutor() {
     }
   };
 
-  const enterQuizMode = async () => {
+  const enterQuizMode = async (query) => {
     setQuizMode(true);
     setLoading(true);
     setMessages([
       ...messages,
       { message: "Entering quiz mode...", type: "model" },
     ]);
-    const response = await fetch("/api/hello", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            message: "",
-            history: messages,
-            quiz: true,
-        }),
-    });
-    const data = await response.json();
-    if (data.message) {
-      setMessages([
-        ...messages,
-        { message: "Entering quiz mode...", type: "model" },
-        { message: data.message, type: "model" },
-      ]);
+    if (query) {
+        const response = await fetch("/api/hello", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                message: "",
+                history: messages,
+                quiz: true,
+            }),
+        });
+        const data = await response.json();
+        if (data.message) {
+        setMessages([
+            ...messages,
+            { message: "Entering quiz mode...", type: "model" },
+            { message: data.message, type: "model" },
+        ]);
+        }
     }
     setLoading(false);
   };
@@ -199,7 +201,7 @@ export default function Tutor() {
                 className="sr-only peer"
                 onChange={(e) => {
                   if (e.target.checked) {
-                    enterQuizMode();
+                    enterQuizMode(true);
                   } else {
                     exitQuizMode();
                   }
